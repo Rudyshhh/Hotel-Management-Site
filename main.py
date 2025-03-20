@@ -21,7 +21,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-SECRET_KEY = "your-secret-key"
+SECRET_KEY = "9439e712e39298ccde02d1c8a1e6d2784e1ed64628915dd74d5e78c6b6e85b65"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
@@ -39,7 +39,7 @@ class User(Base):
 
 class Room(Base):
     __tablename__ = "rooms"
-    id = Column(String, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)  # Fix: Auto-increment ID
     name = Column(String)
     description = Column(String)
     base_price = Column(Float)
@@ -91,7 +91,7 @@ class RoomCreate(BaseModel):
     capacity: int
 
 class RoomResponse(BaseModel):
-    id: str
+    id: int
     name: str
     description: str
     base_price: float
@@ -202,6 +202,7 @@ def calculate_dynamic_price(room_id, check_in, check_out, db: Session):
 
 @app.post("/register", response_model=UserResponse)
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
+    print(f"Received request: {user.dict()}")
     db_user = db.query(User).filter(User.email == user.email).first()
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -232,6 +233,18 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
         data={"sub": user.id}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
+
+# @app.post("/token", response_model=Token)
+# def login_for_access_token(
+#     form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
+# ):
+#     user = db.query(User).filter(User.email == form_data.username).first()
+#     if not user or not bcrypt.checkpw(form_data.password.encode(), user.password.encode()):
+#         raise HTTPException(status_code=400, detail="Incorrect username or password")
+    
+#     access_token = create_access_token(data={"sub": user.id})
+#     return {"access_token": access_token, "token_type": "bearer"}
+
 
 @app.get("/users/me", response_model=UserResponse)
 def read_users_me(current_user: User = Depends(get_current_user)):
@@ -267,7 +280,7 @@ def get_rooms(db: Session = Depends(get_db)):
     return response
 
 @app.get("/rooms/{room_id}", response_model=RoomResponse)
-def get_room(room_id: str, check_in: Optional[datetime] = None, check_out: Optional[datetime] = None, db: Session = Depends(get_db)):
+def get_room(room_id: int, check_in: Optional[datetime] = None, check_out: Optional[datetime] = None, db: Session = Depends(get_db)):
     room = db.query(Room).filter(Room.id == room_id).first()
     if not room:
         raise HTTPException(status_code=404, detail="Room not found")
