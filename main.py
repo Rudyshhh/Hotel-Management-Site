@@ -10,6 +10,8 @@ from uuid import uuid4
 from sqlalchemy import create_engine, Column, String, Integer, Float, Boolean, DateTime, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, Session
+from populate_db import populate_db
+
 
 app = FastAPI()
 
@@ -382,6 +384,8 @@ def delete_booking(booking_id: str, current_user: User = Depends(get_current_use
     db.commit()
     
     return {"message": "Booking deleted successfully"}
+
+populate_db()
 
 if __name__ == "__main__":
     import uvicorn

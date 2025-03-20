@@ -1,35 +1,49 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import create_engine
-from main import Base, Room  # Ensure models.py has the Room model
-import random
+from main import SessionLocal, User, Room, bcrypt, uuid4
 
-# Define the database URL (change if using a different DB)
-DATABASE_URL = "sqlite:///hotel.db"
+def populate_db():
+    db: Session = SessionLocal()
 
-# Create engine and session
-engine = create_engine(DATABASE_URL)
-Base.metadata.create_all(bind=engine)
+    # Check if database is empty
+    user_count = db.query(User).count()
+    room_count = db.query(Room).count()
 
-# Sample rooms data
-rooms_data = [
-    {"name": "Deluxe Suite", "description": "Spacious suite with a sea view", "base_price": 150.0, "capacity": 2},
-    {"name": "Standard Room", "description": "Cozy room with modern amenities", "base_price": 100.0, "capacity": 2},
-    {"name": "Family Room", "description": "Large room for a family of four", "base_price": 200.0, "capacity": 4},
-    {"name": "Presidential Suite", "description": "Luxury suite with premium features", "base_price": 500.0, "capacity": 5},
-    {"name": "Budget Room", "description": "Affordable room for solo travelers", "base_price": 50.0, "capacity": 1}
-]
+    if user_count == 0 and room_count == 0:
+        print("Database is empty. Populating with initial data...")
 
-# Insert rooms into the database
-with Session(engine) as session:
-    for room in rooms_data:
-        new_room = Room(
-            name=room["name"],
-            description=room["description"],
-            base_price=room["base_price"],
-            capacity=room["capacity"]
-        )
-        session.add(new_room)
-    
-    session.commit()
+        # Add Admin User
+        admin_password = bcrypt.hashpw("admin123".encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+        admin = User(id=str(uuid4()), email="admin@example.com", password=admin_password, is_admin=True)
+        db.add(admin)
 
-print("Database populated successfully!")
+        # Add 10 Users
+        users = []
+        for i in range(1, 11):
+            password = bcrypt.hashpw(f"user{i}pass".encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+            user = User(id=str(uuid4()), email=f"user{i}@example.com", password=password, is_admin=False)
+            users.append(user)
+
+        db.add_all(users)
+
+        # Add 15 Rooms
+        rooms = []
+        for i in range(1, 16):
+            room = Room(
+                name=f"Room {i}",
+                description=f"Description of Room {i}",
+                base_price=100 + i * 10,
+                capacity=i
+            )
+            rooms.append(room)
+
+        db.add_all(rooms)
+
+        db.commit()
+        print("Database populated successfully!")
+    else:
+        print("Database already contains data. No changes made.")
+
+    db.close()
+
+if __name__ == "__main__":
+    populate_db()
