@@ -12,3 +12,4 @@ celery
 pyjwt 
 bcrypt
 python-multipart
+jose

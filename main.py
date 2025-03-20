@@ -5,6 +5,7 @@ from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime, timedelta
 import jwt
+from jose import JWTError
 import bcrypt
 from uuid import uuid4
 from sqlalchemy import create_engine, Column, String, Integer, Float, Boolean, DateTime, ForeignKey
@@ -131,18 +132,33 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+# def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+#     try:
+#         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+#         user_id: str = payload.get("sub")
+#         if user_id is None:
+#             raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+#         token_data = TokenData(user_id=user_id)
+#     except jwt.PyJWTError:
+#         raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+#     user = db.query(User).filter(User.id == token_data.user_id).first()
+#     if user is None:
+#         raise HTTPException(status_code=401, detail="User not found")
+#     return user
+
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id: str = payload.get("sub")
-        if user_id is None:
+        if not user_id:
             raise HTTPException(status_code=401, detail="Invalid authentication credentials")
-        token_data = TokenData(user_id=user_id)
-    except jwt.PyJWTError:
+    except JWTError:
         raise HTTPException(status_code=401, detail="Invalid authentication credentials")
-    user = db.query(User).filter(User.id == token_data.user_id).first()
-    if user is None:
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
         raise HTTPException(status_code=401, detail="User not found")
+
     return user
 
 def get_admin_user(current_user: User = Depends(get_current_user)):
@@ -299,26 +315,61 @@ def get_room(room_id: int, check_in: Optional[datetime] = None, check_out: Optio
     
     return room_dict
 
+
+# @app.post("/bookings", response_model=BookingResponse)
+# def create_booking(booking: BookingCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+#     if booking.check_in >= booking.check_out:
+#         raise HTTPException(status_code=400, detail="Check-out must be after check-in")
+    
+#     room = db.query(Room).filter(Room.id == booking.room_id).first()
+#     if not room:
+#         raise HTTPException(status_code=404, detail="Room not found")
+    
+#     overlapping_bookings = db.query(Booking).filter(
+#         Booking.room_id == booking.room_id,
+#         Booking.check_in < booking.check_out,
+#         Booking.check_out > booking.check_in
+#     ).all()
+    
+#     if overlapping_bookings:
+#         raise HTTPException(status_code=400, detail="Room is already booked for these dates")
+    
+#     final_price = calculate_dynamic_price(booking.room_id, booking.check_in, booking.check_out, db)
+    
+#     db_booking = Booking(
+#         id=str(uuid4()),
+#         user_id=current_user.id,
+#         room_id=booking.room_id,
+#         check_in=booking.check_in,
+#         check_out=booking.check_out,
+#         final_price=final_price
+#     )
+    
+#     db.add(db_booking)
+#     db.commit()
+#     db.refresh(db_booking)
+    
+#     return db_booking
+
 @app.post("/bookings", response_model=BookingResponse)
 def create_booking(booking: BookingCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     if booking.check_in >= booking.check_out:
         raise HTTPException(status_code=400, detail="Check-out must be after check-in")
-    
+
     room = db.query(Room).filter(Room.id == booking.room_id).first()
     if not room:
         raise HTTPException(status_code=404, detail="Room not found")
-    
-    overlapping_bookings = db.query(Booking).filter(
+
+    overlapping = db.query(Booking).filter(
         Booking.room_id == booking.room_id,
-        Booking.check_in < booking.check_out,
-        Booking.check_out > booking.check_in
-    ).all()
-    
-    if overlapping_bookings:
+        (Booking.check_in < booking.check_out) & (Booking.check_out > booking.check_in)
+    ).first()  # Use `.first()` instead of `.all()` for efficiency
+
+    if overlapping:
         raise HTTPException(status_code=400, detail="Room is already booked for these dates")
-    
+
     final_price = calculate_dynamic_price(booking.room_id, booking.check_in, booking.check_out, db)
-    
+
     db_booking = Booking(
         id=str(uuid4()),
         user_id=current_user.id,
@@ -327,11 +378,11 @@ def create_booking(booking: BookingCreate, db: Session = Depends(get_db), curren
         check_out=booking.check_out,
         final_price=final_price
     )
-    
+
     db.add(db_booking)
     db.commit()
     db.refresh(db_booking)
-    
+
     return db_booking
 
 @app.get("/bookings", response_model=List[BookingResponse])
