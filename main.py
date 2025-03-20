@@ -404,16 +404,23 @@ def populate_db(db):
 
     db.add_all(users)
 
-    # Add 15 Rooms
-    rooms = []
-    for i in range(1, 16):
-        room = Room(
-            name=f"Room {i}",
-            description=f"Description of Room {i}",
-            base_price=100 + i * 10,
-            capacity=i
-        )
-        rooms.append(room)
+    rooms = [
+        Room(name="Presidential Suite", description="A luxurious suite with a private jacuzzi and skyline view", base_price=500, capacity=4),
+        Room(name="Royal Penthouse", description="Exclusive top-floor penthouse with a private terrace", base_price=700, capacity=6),
+        Room(name="Ocean View Deluxe", description="Spacious room with a balcony overlooking the ocean", base_price=300, capacity=3),
+        Room(name="Mountain Retreat", description="Cozy wooden cabin with a breathtaking mountain view", base_price=250, capacity=2),
+        Room(name="Family Suite", description="Large family suite with interconnected rooms and play area", base_price=350, capacity=5),
+        Room(name="Business Executive Room", description="Perfect for business travelers with a work desk and high-speed WiFi", base_price=220, capacity=2),
+        Room(name="Standard Double", description="Affordable and comfortable double room", base_price=150, capacity=2),
+        Room(name="Standard Single", description="Compact room for solo travelers", base_price=100, capacity=1),
+        Room(name="Luxury Villa", description="Private villa with a swimming pool and garden", base_price=800, capacity=8),
+        Room(name="Beach Bungalow", description="Seaside bungalow with a hammock and ocean breeze", base_price=350, capacity=3),
+        Room(name="Glass Igloo", description="Experience the northern lights in a heated glass igloo", base_price=600, capacity=2),
+        Room(name="Safari Lodge", description="Adventure lodge in the wild with an open-air shower", base_price=450, capacity=4),
+        Room(name="Japanese Ryokan", description="Traditional Japanese inn with tatami mats and hot springs", base_price=400, capacity=3),
+        Room(name="Mediterranean Retreat", description="A villa with a private vineyard and olive garden", base_price=550, capacity=6),
+        Room(name="Budget Dormitory", description="Shared dorm room with bunk beds for backpackers", base_price=50, capacity=10),
+    ]
 
     db.add_all(rooms)
 
