@@ -384,7 +384,7 @@ def delete_booking(booking_id: str, current_user: User = Depends(get_current_use
     
     return {"message": "Booking deleted successfully"}
 
-def populate_db(db:Session):
+def populate_db(db):
 
     # Check if database is empty
     user_count = db.query(User).count()
@@ -426,8 +426,10 @@ def populate_db(db:Session):
         print("Database already contains data. No changes made.")
 
 
+db = SessionLocal()
+populate_db(db)
+db.close()
 
-populate_db()
 
 if __name__ == "__main__":
     import uvicorn
