@@ -5,7 +5,6 @@ from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime, timedelta
 import jwt
-from jose import JWTError
 import bcrypt
 from uuid import uuid4
 from sqlalchemy import create_engine, Column, String, Integer, Float, Boolean, DateTime, ForeignKey
@@ -152,7 +151,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         user_id: str = payload.get("sub")
         if not user_id:
             raise HTTPException(status_code=401, detail="Invalid authentication credentials")
-    except JWTError:
+    except jwt.PyJWTError:
         raise HTTPException(status_code=401, detail="Invalid authentication credentials")
 
     user = db.query(User).filter(User.id == user_id).first()
