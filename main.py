@@ -387,8 +387,7 @@ def delete_booking(booking_id: str, current_user: User = Depends(get_current_use
 def populate_db(db):
 
     # Check if database is empty
-    user_count = db.query(User).count()
-    room_count = db.query(Room).count()
+
 
 
     # Add Admin User
@@ -416,10 +415,10 @@ def populate_db(db):
         )
         rooms.append(room)
 
-        db.add_all(rooms)
+    db.add_all(rooms)
 
-        db.commit()
-        print("Database populated successfully!")
+    db.commit()
+    print("Database populated successfully!")
 
 
 db = SessionLocal()
