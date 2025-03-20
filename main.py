@@ -300,7 +300,7 @@ def get_room(room_id: int, check_in: Optional[datetime] = None, check_out: Optio
     return room_dict
 
 @app.post("/bookings", response_model=BookingResponse)
-def create_booking(booking: BookingCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def create_booking(booking: BookingCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     if booking.check_in >= booking.check_out:
         raise HTTPException(status_code=400, detail="Check-out must be after check-in")
     
